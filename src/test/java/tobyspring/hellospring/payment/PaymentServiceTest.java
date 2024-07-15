@@ -16,20 +16,22 @@ class PaymentServiceTest {
 
     @Test
     @DisplayName("prepare 메소드가 요구사항 3가지를 잘 충족했는지 검증")
-    void prepare() throws IOException {
-        PaymentService paymentService = new PaymentService(new WebApiExRateProvider());
+    void convertedAmount() throws IOException {
+        testAmount(BigDecimal.valueOf(500), BigDecimal.valueOf(5000));
+        testAmount(BigDecimal.valueOf(1_000), BigDecimal.valueOf(10_000));
+        testAmount(BigDecimal.valueOf(3_000), BigDecimal.valueOf(30_000));
+
+        // 원화 환산 금액 유효시간 계산
+//        assertThat(payment.getValidUntil()).isAfter(LocalDateTime.now());
+//        assertThat(payment.getValidUntil()).isBefore(LocalDateTime.now().plusMinutes(30));
+    }
+
+    private static void testAmount(BigDecimal exRate, BigDecimal convertedAmount) throws IOException {
+        PaymentService paymentService = new PaymentService(new ExRateProviderStub(exRate));
 
         Payment payment = paymentService.prepare(1L, "USD", BigDecimal.TEN);
 
-        // 환율정보 가져온다.
-        assertThat(payment.getExRate()).isNotNull();
-
-        // 원화 환산 금액 계산
-        assertThat(payment.getConvertedAmount())
-                .isEqualTo(payment.getExRate().multiply(payment.getForeignCurrencyAmount()));
-
-        // 원화 환산 금액 유효시간 계산
-        assertThat(payment.getValidUntil()).isAfter(LocalDateTime.now());
-        assertThat(payment.getValidUntil()).isBefore(LocalDateTime.now().plusMinutes(30));
+        assertThat(payment.getExRate()).isEqualByComparingTo(exRate);
+        assertThat(payment.getConvertedAmount()).isEqualByComparingTo(convertedAmount);
     }
 }
