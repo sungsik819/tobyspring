@@ -19,13 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = TestObjectFactory.class)
 class PaymentServiceSpringTest {
-    @Autowired BeanFactory beanFactory;
+    @Autowired PaymentService paymentService;
 
     @Test
     @DisplayName("prepare 메소드가 요구사항 3가지를 잘 충족했는지 검증")
     void convertedAmount() throws IOException {
-        PaymentService paymentService = beanFactory.getBean(PaymentService.class);
-
         Payment payment = paymentService.prepare(1L, "USD", BigDecimal.TEN);
 
         assertThat(payment.getExRate()).isEqualByComparingTo(BigDecimal.valueOf(1_000));
