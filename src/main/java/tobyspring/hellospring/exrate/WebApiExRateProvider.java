@@ -18,6 +18,7 @@ public class WebApiExRateProvider implements ExRateProvider {
 
     @Override
     public BigDecimal getExRate(String currency) {
+        // 1. URI를 준비하고 예외처리 작업
         String url = "https://open.er-api.com/v6/latest/" + currency;
         URI uri;
         try {
@@ -26,28 +27,34 @@ public class WebApiExRateProvider implements ExRateProvider {
             throw new RuntimeException(e);
         }
 
-        HttpURLConnection connection;
-        try {
-            connection = (HttpURLConnection) uri.toURL().openConnection();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        // 2. API 실행 및 서버로 부터 받은 응답 가져오기
         String response;
         try {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-                response = br.lines().collect(Collectors.joining());
-            }
+            response = executeApi(uri);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        // 3. JSON 문자열 파싱 및 필요한 정보 추출
         try {
-            ExRateData data = mapper.readValue(response, ExRateData.class);
-            return data.rates().get("KRW");
+            return parseExRate(response);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static BigDecimal parseExRate(String response) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        ExRateData data = mapper.readValue(response, ExRateData.class);
+        return data.rates().get("KRW");
+    }
+
+    private static String executeApi(URI uri) throws IOException {
+        String response;
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+            response = br.lines().collect(Collectors.joining());
+        }
+        return response;
     }
 }
